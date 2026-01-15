@@ -1426,8 +1426,7 @@
         <div class="name-modal-content">
             <h3><i class="fas fa-phone"></i> Before you call us...</h3>
             <p>We might be busy with a project. Leave your email so we can reach you back if we miss your call:</p>
-            <input type="text" id="nameInput" placeholder="Enter your name" autocomplete="name">
-            <input type="email" id="emailInput" placeholder="Enter your email" autocomplete="email" style="margin-top: 15px;">
+            <input type="email" id="emailInput" placeholder="Enter your email" autocomplete="email">
             <div class="name-modal-buttons">
                 <button class="btn-confirm" id="confirmCall">
                     <i class="fas fa-phone"></i> Call Now
@@ -1440,7 +1439,6 @@
     <script>
         // NAME MODAL FUNCTIONALITY
         const nameModal = document.getElementById('nameModal');
-        const nameInput = document.getElementById('nameInput');
         const emailInput = document.getElementById('emailInput');
         const confirmCallBtn = document.getElementById('confirmCall');
         const cancelCallBtn = document.getElementById('cancelCall');
@@ -1449,9 +1447,8 @@
         function showNameModal(phoneNumber = 'tel:+19788787977') {
             pendingPhoneNumber = phoneNumber;
             nameModal.classList.add('show');
-            nameInput.value = '';
             emailInput.value = '';
-            setTimeout(() => nameInput.focus(), 300);
+            setTimeout(() => emailInput.focus(), 300);
         }
 
         function hideNameModal() {
@@ -1473,15 +1470,7 @@
         setupCallInterception();
 
         confirmCallBtn.addEventListener('click', function() {
-            const userName = nameInput.value.trim();
             const userEmail = emailInput.value.trim();
-            
-            if (!userName) {
-                nameInput.style.borderColor = '#ff4444';
-                nameInput.placeholder = 'Please enter your name';
-                nameInput.focus();
-                return;
-            }
 
             if (!userEmail || !userEmail.includes('@')) {
                 emailInput.style.borderColor = '#ff4444';
@@ -1491,7 +1480,6 @@
             }
 
             const phoneToCall = pendingPhoneNumber;
-            localStorage.setItem('userName', userName);
             localStorage.setItem('userEmail', userEmail);
             
             fetch('https://hook.us2.make.com/ctp3mh229k0mi9ujiy1xcu1xh84fpa3x', {
@@ -1500,7 +1488,6 @@
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    name: userName,
                     email: userEmail,
                     source: 'Ligação - Phone Call - Deck',
                     platform: 'deck-innov',
