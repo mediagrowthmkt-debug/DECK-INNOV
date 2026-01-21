@@ -1487,8 +1487,8 @@
     <div class="name-modal" id="nameModal">
         <div class="name-modal-content">
             <h3><i class="fas fa-phone"></i> Before you call us...</h3>
-            <p>We might be busy with a project. Leave your email so we can reach you back if we miss your call:</p>
-            <input type="email" id="emailInput" placeholder="Enter your email" autocomplete="email">
+            <p>We might be busy with a project. Leave your phone so we can reach you back if we miss your call:</p>
+            <input type="tel" id="phoneInput" placeholder="Enter your phone (e.g. 978-123-4567)" autocomplete="tel">
             <div class="name-modal-buttons">
                 <button class="btn-confirm" id="confirmCall">
                     <i class="fas fa-phone"></i> Call Now
@@ -1501,16 +1501,35 @@
     <script>
         // NAME MODAL FUNCTIONALITY
         const nameModal = document.getElementById('nameModal');
-        const emailInput = document.getElementById('emailInput');
+        const phoneInput = document.getElementById('phoneInput');
         const confirmCallBtn = document.getElementById('confirmCall');
         const cancelCallBtn = document.getElementById('cancelCall');
         let pendingPhoneNumber = '';
 
+        // Function to validate US phone numbers
+        function isValidUSPhone(phone) {
+            // Remove all non-digit characters
+            const digits = phone.replace(/\D/g, '');
+            // US phone numbers have 10 digits (or 11 if starting with 1)
+            return digits.length === 10 || (digits.length === 11 && digits.startsWith('1'));
+        }
+
+        // Function to format phone number for tel: link
+        function formatPhoneForCall(phone) {
+            const digits = phone.replace(/\D/g, '');
+            if (digits.length === 10) {
+                return 'tel:+1' + digits;
+            } else if (digits.length === 11 && digits.startsWith('1')) {
+                return 'tel:+' + digits;
+            }
+            return 'tel:+1' + digits;
+        }
+
         function showNameModal(phoneNumber = 'tel:+19788787977') {
             pendingPhoneNumber = phoneNumber;
             nameModal.classList.add('show');
-            emailInput.value = '';
-            setTimeout(() => emailInput.focus(), 300);
+            phoneInput.value = '';
+            setTimeout(() => phoneInput.focus(), 300);
         }
 
         function hideNameModal() {
@@ -1532,29 +1551,74 @@
         setupCallInterception();
 
         confirmCallBtn.addEventListener('click', function() {
-            const userEmail = emailInput.value.trim();
+            const userPhone = phoneInput.value.trim();
 
-            if (!userEmail || !userEmail.includes('@')) {
-                emailInput.style.borderColor = '#ff4444';
-                emailInput.placeholder = 'Please enter a valid email';
-                emailInput.focus();
+            // Validate US phone number
+            if (!userPhone || !isValidUSPhone(userPhone)) {
+                phoneInput.style.borderColor = '#ff4444';
+                phoneInput.placeholder = 'Please enter a valid US phone';
+                phoneInput.focus();
                 return;
             }
 
             const phoneToCall = pendingPhoneNumber;
-            localStorage.setItem('userEmail', userEmail);
+            localStorage.setItem('userPhone', userPhone);
+            
+            // Detect traffic source from URL parameters or referrer (same logic as form)
+            const urlParams = new URLSearchParams(window.location.search);
+            const urlString = window.location.href.toLowerCase();
+            const referrer = document.referrer.toLowerCase();
+            
+            // Default values
+            let traffic_source = '';
+            let plataforma = '';
+            let platform = '';
+            
+            // Check URL parameters and referrer for META/GOOGLE indicators
+            if (urlString.includes('meta') || urlString.includes('facebook') || urlString.includes('instagram') || 
+                urlString.includes('fb') || referrer.includes('facebook') || referrer.includes('instagram')) {
+                traffic_source = 'Meta Ads';
+                plataforma = 'META';
+                platform = 'meta';
+            } else if (urlString.includes('google') || urlString.includes('gclid') || referrer.includes('google')) {
+                traffic_source = 'Google Ads';
+                plataforma = 'GOOGLE ADS';
+                platform = '';
+            }
+            
+            // Check utm_source parameter
+            const utmSource = urlParams.get('utm_source');
+            if (utmSource) {
+                if (utmSource.toLowerCase().includes('meta') || utmSource.toLowerCase().includes('facebook') || utmSource.toLowerCase().includes('instagram')) {
+                    traffic_source = 'Meta Ads';
+                    plataforma = 'META';
+                    platform = 'meta';
+                } else if (utmSource.toLowerCase().includes('google')) {
+                    traffic_source = 'Google Ads';
+                    plataforma = 'GOOGLE ADS';
+                    platform = '';
+                }
+            }
+            
+            // Prepare webhook data with same fields as form
+            const webhookBody = new URLSearchParams();
+            webhookBody.append('phone', userPhone);
+            webhookBody.append('campaign_name', 'Deck Innov');
+            webhookBody.append('page_name', 'Deck Remodeling - Landing Page');
+            webhookBody.append('traffic_source', traffic_source);
+            webhookBody.append('PLATAFORMA', plataforma);
+            if (platform) {
+                webhookBody.append('platform', platform);
+            }
+            webhookBody.append('source', 'Ligação - Phone Call - Deck');
             
             fetch('https://hook.us2.make.com/ctp3mh229k0mi9ujiy1xcu1xh84fpa3x', {
                 method: 'POST',
+                mode: 'no-cors',
                 headers: {
-                    'Content-Type': 'application/json',
+                    'Content-Type': 'application/x-www-form-urlencoded',
                 },
-                body: JSON.stringify({
-                    email: userEmail,
-                    source: 'Ligação - Phone Call - Deck',
-                    platform: 'deck-innov',
-                    timestamp: new Date().toISOString()
-                })
+                body: webhookBody.toString()
             }).catch(error => console.log('Webhook error:', error));
             
             hideNameModal();
@@ -1574,7 +1638,7 @@
             }
         });
 
-        emailInput.addEventListener('keypress', function(e) {
+        phoneInput.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 confirmCallBtn.click();
             }
