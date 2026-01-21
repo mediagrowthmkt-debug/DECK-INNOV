@@ -1574,7 +1574,7 @@
             }
         });
 
-        nameInput.addEventListener('keypress', function(e) {
+        emailInput.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 confirmCallBtn.click();
             }
@@ -1656,64 +1656,79 @@
                 const urlString = window.location.href.toLowerCase();
                 const referrer = document.referrer.toLowerCase();
                 
-                let fonte = 'DIRECT';
-                let plataforma = 'DIRECT';
+                // Default values
+                let traffic_source = '';
+                let plataforma = '';
+                let platform = '';
                 
                 // Check URL parameters and referrer for META/GOOGLE indicators
                 if (urlString.includes('meta') || urlString.includes('facebook') || urlString.includes('instagram') || 
                     urlString.includes('fb') || referrer.includes('facebook') || referrer.includes('instagram')) {
-                    fonte = 'META';
+                    traffic_source = 'Meta Ads';
                     plataforma = 'META';
+                    platform = 'meta';
                 } else if (urlString.includes('google') || urlString.includes('gclid') || referrer.includes('google')) {
-                    fonte = 'GOOGLE';
-                    plataforma = 'GOOGLE';
+                    traffic_source = 'Google Ads';
+                    plataforma = 'GOOGLE ADS';
+                    platform = '';
                 }
                 
                 // Check utm_source parameter
                 const utmSource = urlParams.get('utm_source');
                 if (utmSource) {
                     if (utmSource.toLowerCase().includes('meta') || utmSource.toLowerCase().includes('facebook') || utmSource.toLowerCase().includes('instagram')) {
-                        fonte = 'META';
+                        traffic_source = 'Meta Ads';
                         plataforma = 'META';
+                        platform = 'meta';
                     } else if (utmSource.toLowerCase().includes('google')) {
-                        fonte = 'GOOGLE';
-                        plataforma = 'GOOGLE';
+                        traffic_source = 'Google Ads';
+                        plataforma = 'GOOGLE ADS';
+                        platform = '';
                     }
                 }
                 
-                // Prepare webhook data in the requested format
-                const webhookData = {
-                    email: formObject.email || '',
-                    phone: formObject.phone || '',
-                    name: formObject.name || '',
-                    campaign_name: 'Deck Innov',
-                    page_name: 'Deck Remodeling - Landing Page',
-                    FONTE: fonte,
-                    PLATAFORMA: plataforma
-                };
+                // Convert to URL-encoded form data for separate fields
+                const formBody = new URLSearchParams();
+                formBody.append('email', formObject.email || '');
+                formBody.append('phone', formObject.phone || '');
+                formBody.append('name', formObject.name || '');
+                formBody.append('deckType', formObject.deckType || '');
+                formBody.append('campaign_name', 'Deck Innov');
+                formBody.append('page_name', 'Deck Remodeling - Landing Page');
+                formBody.append('traffic_source', traffic_source);
+                formBody.append('PLATAFORMA', plataforma);
+                if (platform) {
+                    formBody.append('platform', platform);
+                }
                 
                 const submitBtn = this.querySelector('button[type="submit"]');
                 const originalText = submitBtn.innerHTML;
                 submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
                 submitBtn.disabled = true;
                 
+                // Send webhook - using form-urlencoded for separate fields
                 fetch('https://hook.us2.make.com/ctp3mh229k0mi9ujiy1xcu1xh84fpa3x', {
                     method: 'POST',
+                    mode: 'no-cors',
                     headers: {
-                        'Content-Type': 'application/json',
+                        'Content-Type': 'application/x-www-form-urlencoded',
                     },
-                    body: JSON.stringify(webhookData)
+                    body: formBody.toString()
                 })
-                .then(response => {
-                    // Redirect regardless of response status
-                    // Make.com webhooks often return non-standard responses
+                .then(function() {
+                    // Redirect to thank you page
                     window.location.href = 'thank-you.html';
                 })
-                .catch(error => {
+                .catch(function(error) {
                     console.error('Error submitting form:', error);
-                    // Still redirect even if there's an error, data was sent
+                    // Still redirect even if there's an error, data was likely sent
                     window.location.href = 'thank-you.html';
                 });
+                
+                // Fallback: ensure redirect happens after timeout
+                setTimeout(function() {
+                    window.location.href = 'thank-you.html';
+                }, 3000);
             }
         });
 
