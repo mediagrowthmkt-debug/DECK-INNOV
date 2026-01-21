@@ -1581,58 +1581,79 @@
                 const handle = slider.querySelector('.slider-handle');
                 const afterImage = slider.querySelector('.after-image');
                 let isDragging = false;
+                let hasInteracted = false;
+                
+                if (!handle || !afterImage) return;
+                
+                function getPositionX(e) {
+                    return e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+                }
+                
+                function updateSlider(percentage) {
+                    const clampedPercentage = Math.max(0, Math.min(100, percentage));
+                    handle.style.left = clampedPercentage + '%';
+                    afterImage.style.clipPath = `inset(0 ${100 - clampedPercentage}% 0 0)`;
+                }
+                
+                function startDrag(e) {
+                    isDragging = true;
+                    hasInteracted = true;
+                    e.preventDefault();
+                    e.stopPropagation();
+                    slider.style.cursor = 'grabbing';
+                    handle.style.cursor = 'grabbing';
+                }
+                
+                function drag(e) {
+                    if (!isDragging) return;
+                    e.preventDefault();
+                    
+                    const rect = slider.getBoundingClientRect();
+                    const x = getPositionX(e) - rect.left;
+                    const percentage = (x / rect.width) * 100;
+                    
+                    updateSlider(percentage);
+                }
+                
+                function stopDrag() {
+                    if (isDragging) {
+                        isDragging = false;
+                        slider.style.cursor = 'grab';
+                        handle.style.cursor = 'grab';
+                    }
+                }
                 
                 // Mouse events
                 handle.addEventListener('mousedown', startDrag);
+                slider.addEventListener('mousedown', function(e) {
+                    if (e.target === slider || slider.contains(e.target)) {
+                        const rect = slider.getBoundingClientRect();
+                        const x = e.clientX - rect.left;
+                        const percentage = (x / rect.width) * 100;
+                        updateSlider(percentage);
+                        hasInteracted = true;
+                    }
+                });
+                
                 document.addEventListener('mousemove', drag);
                 document.addEventListener('mouseup', stopDrag);
                 
                 // Touch events for mobile
                 handle.addEventListener('touchstart', startDrag, { passive: false });
+                slider.addEventListener('touchstart', function(e) {
+                    if (e.target === slider || slider.contains(e.target)) {
+                        const rect = slider.getBoundingClientRect();
+                        const x = e.touches[0].clientX - rect.left;
+                        const percentage = (x / rect.width) * 100;
+                        updateSlider(percentage);
+                        hasInteracted = true;
+                    }
+                });
+                
                 document.addEventListener('touchmove', drag, { passive: false });
                 document.addEventListener('touchend', stopDrag);
                 
-                // Click anywhere on slider to move handle
-                slider.addEventListener('click', function(e) {
-                    if (e.target === handle || handle.contains(e.target)) return;
-                    
-                    const rect = slider.getBoundingClientRect();
-                    const x = e.clientX - rect.left;
-                    const percentage = (x / rect.width) * 100;
-                    
-                    updateSlider(Math.max(0, Math.min(100, percentage)));
-                });
-                
-                function startDrag(e) {
-                    isDragging = true;
-                    e.preventDefault();
-                    slider.style.cursor = 'col-resize';
-                }
-                
-                function drag(e) {
-                    if (!isDragging) return;
-                    
-                    e.preventDefault();
-                    const rect = slider.getBoundingClientRect();
-                    const clientX = e.clientX || (e.touches && e.touches[0].clientX);
-                    const x = clientX - rect.left;
-                    const percentage = (x / rect.width) * 100;
-                    
-                    updateSlider(Math.max(0, Math.min(100, percentage)));
-                }
-                
-                function stopDrag() {
-                    isDragging = false;
-                    slider.style.cursor = 'col-resize';
-                }
-                
-                function updateSlider(percentage) {
-                    handle.style.left = percentage + '%';
-                    afterImage.style.clipPath = `inset(0 ${100 - percentage}% 0 0)`;
-                }
-                
                 // Auto-animate on hover for first time visitors
-                let hasInteracted = false;
                 slider.addEventListener('mouseenter', function() {
                     if (!hasInteracted) {
                         autoAnimate();
@@ -1656,7 +1677,7 @@
                         const percentage = 50 + (Math.sin(easeInOut * Math.PI * 2) * 25);
                         updateSlider(percentage);
                         
-                        if (progress < 1) {
+                        if (progress < 1 && !hasInteracted) {
                             requestAnimationFrame(animate);
                         } else {
                             updateSlider(50); // Return to center
@@ -1666,8 +1687,11 @@
                     animate();
                 }
                 
-                slider.addEventListener('mousedown', () => hasInteracted = true);
-                slider.addEventListener('touchstart', () => hasInteracted = true);
+                // Set initial position
+                updateSlider(50);
+                slider.style.cursor = 'grab';
+                handle.style.cursor = 'grab';
+
             });
         });
 
