@@ -1,50 +1,72 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Test Slider</title>
+    <title>TESTE SLIDER - ARRASTE AQUI</title>
     <style>
-        body {
-            background: #000;
+        body { 
+            font-family: Arial; 
+            background: #222; 
+            color: white; 
             padding: 50px;
-            font-family: Arial;
+            text-align: center;
         }
+        h1 { color: #FFC300; margin-bottom: 30px; }
         
         .slider-container {
-            width: 400px;
+            width: 500px;
             height: 300px;
+            margin: 0 auto 30px;
             position: relative;
-            overflow: hidden;
-            cursor: ew-resize;
-            border: 2px solid yellow;
+            background: #333;
+            border: 3px solid #FFC300;
         }
         
-        .slider-container img {
+        .img-before, .img-after {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
             pointer-events: none;
         }
         
         .img-before {
+            background: linear-gradient(45deg, #ff0000, #ff6600);
             z-index: 1;
         }
         
         .img-after {
+            background: linear-gradient(45deg, #00ff00, #0066ff);
             z-index: 2;
             clip-path: inset(0 50% 0 0);
         }
         
+        /* INPUT RANGE INVISIVEL */
+        .range-input {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 100;
+            opacity: 0;
+            cursor: ew-resize;
+            margin: 0;
+            -webkit-appearance: none;
+        }
+        
+        .range-input::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 50px;
+            height: 300px;
+            cursor: ew-resize;
+        }
+        
+        /* HANDLE VISUAL */
         .handle {
             position: absolute;
             top: 0;
             left: 50%;
-            width: 4px;
+            width: 6px;
             height: 100%;
-            background: yellow;
-            z-index: 10;
+            background: #FFC300;
+            z-index: 5;
             transform: translateX(-50%);
             pointer-events: none;
         }
@@ -55,100 +77,71 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 40px;
-            height: 40px;
-            background: yellow;
+            background: #FFC300;
+            width: 50px;
+            height: 50px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 16px;
+            font-size: 20px;
+            border: 3px solid black;
         }
         
         #debug {
-            color: white;
+            background: #000;
+            padding: 20px;
             margin-top: 20px;
-            padding: 10px;
-            background: #333;
+            font-family: monospace;
+            text-align: left;
+        }
+        
+        .instructions {
+            background: #FFC300;
+            color: black;
+            padding: 15px;
+            margin-bottom: 30px;
+            font-size: 18px;
+            font-weight: bold;
         }
     </style>
 </head>
 <body>
-    <h1 style="color: white;">Test Before/After Slider</h1>
+    <h1>🧪 TESTE DO SLIDER</h1>
     
-    <div class="slider-container" id="slider1">
-        <img src="before and afters/after 3.webp" class="img-before">
-        <img src="before and afters/before 3.webp" class="img-after">
-        <div class="handle"></div>
+    <div class="instructions">
+        👆 CLIQUE E ARRASTE NA ÁREA ABAIXO PARA TESTAR<br>
+        O slider deve mover de VERDE para VERMELHO
     </div>
     
-    <div id="debug">Debug info will appear here</div>
+    <div class="slider-container">
+        <div class="img-before"></div>
+        <div class="img-after" id="afterImg"></div>
+        <input type="range" min="0" max="100" value="50" class="range-input" id="rangeInput" 
+               oninput="updateSlider(this.value)">
+        <div class="handle" id="handle"></div>
+    </div>
+    
+    <div id="debug">
+        Valor atual: 50%<br>
+        Arraste para ver mudanças...
+    </div>
     
     <script>
-        const debug = document.getElementById('debug');
-        const slider = document.getElementById('slider1');
-        const handle = slider.querySelector('.handle');
-        const afterImg = slider.querySelector('.img-after');
-        
-        let isDragging = false;
-        
-        function log(msg) {
-            debug.innerHTML = msg + '<br>' + debug.innerHTML;
-            console.log(msg);
+        function updateSlider(value) {
+            document.getElementById('handle').style.left = value + '%';
+            document.getElementById('afterImg').style.clipPath = 'inset(0 ' + (100 - value) + '% 0 0)';
+            document.getElementById('debug').innerHTML = 
+                'Valor atual: ' + value + '%<br>' +
+                'Handle position: ' + value + '%<br>' +
+                'Clip-path: inset(0 ' + (100 - value) + '% 0 0)<br>' +
+                'Timestamp: ' + new Date().toLocaleTimeString();
         }
         
-        function updatePosition(clientX) {
-            const rect = slider.getBoundingClientRect();
-            const x = clientX - rect.left;
-            const pct = Math.max(0, Math.min(100, (x / rect.width) * 100));
-            
-            handle.style.left = pct + '%';
-            afterImg.style.clipPath = `inset(0 ${100 - pct}% 0 0)`;
-            
-            log(`Position: ${pct.toFixed(1)}%`);
-        }
-        
-        slider.onmousedown = function(e) {
-            isDragging = true;
-            log('MOUSE DOWN');
-            updatePosition(e.clientX);
-        };
-        
-        document.onmousemove = function(e) {
-            if (!isDragging) return;
-            log('MOUSE MOVE');
-            updatePosition(e.clientX);
-        };
-        
-        document.onmouseup = function() {
-            if (isDragging) {
-                isDragging = false;
-                log('MOUSE UP');
-            }
-        };
-        
-        // Touch
-        slider.ontouchstart = function(e) {
-            isDragging = true;
-            log('TOUCH START');
-            updatePosition(e.touches[0].clientX);
-            e.preventDefault();
-        };
-        
-        document.ontouchmove = function(e) {
-            if (!isDragging) return;
-            log('TOUCH MOVE');
-            updatePosition(e.touches[0].clientX);
-        };
-        
-        document.ontouchend = function() {
-            if (isDragging) {
-                isDragging = false;
-                log('TOUCH END');
-            }
-        };
-        
-        log('Slider initialized!');
+        // Teste se eventos estão funcionando
+        document.getElementById('rangeInput').addEventListener('input', function() {
+            console.log('Input event fired! Value:', this.value);
+        });
     </script>
 </body>
 </html>
