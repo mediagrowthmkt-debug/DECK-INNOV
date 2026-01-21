@@ -1693,12 +1693,46 @@
                     formObject[key] = value;
                 });
                 
-                formObject.fonte = 'lp-deck-innov';
-                formObject.url_campanha = window.location.href;
-                formObject.nome_pagina = 'Deck Remodeling - Landing Page';
-                formObject.nome_campanha = 'Deck Innov';
-                formObject.slug = '/deck';
-                formObject.traffic_source = 'Direct';
+                // Detect traffic source from URL parameters or referrer
+                const urlParams = new URLSearchParams(window.location.search);
+                const urlString = window.location.href.toLowerCase();
+                const referrer = document.referrer.toLowerCase();
+                
+                let fonte = 'DIRECT';
+                let plataforma = 'DIRECT';
+                
+                // Check URL parameters and referrer for META/GOOGLE indicators
+                if (urlString.includes('meta') || urlString.includes('facebook') || urlString.includes('instagram') || 
+                    urlString.includes('fb') || referrer.includes('facebook') || referrer.includes('instagram')) {
+                    fonte = 'META';
+                    plataforma = 'META';
+                } else if (urlString.includes('google') || urlString.includes('gclid') || referrer.includes('google')) {
+                    fonte = 'GOOGLE';
+                    plataforma = 'GOOGLE';
+                }
+                
+                // Check utm_source parameter
+                const utmSource = urlParams.get('utm_source');
+                if (utmSource) {
+                    if (utmSource.toLowerCase().includes('meta') || utmSource.toLowerCase().includes('facebook') || utmSource.toLowerCase().includes('instagram')) {
+                        fonte = 'META';
+                        plataforma = 'META';
+                    } else if (utmSource.toLowerCase().includes('google')) {
+                        fonte = 'GOOGLE';
+                        plataforma = 'GOOGLE';
+                    }
+                }
+                
+                // Prepare webhook data in the requested format
+                const webhookData = {
+                    email: formObject.email || '',
+                    phone: formObject.phone || '',
+                    name: formObject.name || '',
+                    campaign_name: 'Deck Innov',
+                    page_name: 'Deck Remodeling - Landing Page',
+                    FONTE: fonte,
+                    PLATAFORMA: plataforma
+                };
                 
                 const submitBtn = this.querySelector('button[type="submit"]');
                 const originalText = submitBtn.innerHTML;
@@ -1710,7 +1744,7 @@
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify(formObject)
+                    body: JSON.stringify(webhookData)
                 })
                 .then(response => {
                     // Redirect regardless of response status
