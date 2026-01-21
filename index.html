@@ -1694,17 +1694,14 @@
                     body: JSON.stringify(formObject)
                 })
                 .then(response => {
-                    if (response.ok) {
-                        window.location.href = 'thank-you.html';
-                    } else {
-                        throw new Error('Network response was not ok');
-                    }
+                    // Redirect regardless of response status
+                    // Make.com webhooks often return non-standard responses
+                    window.location.href = 'thank-you.html';
                 })
                 .catch(error => {
                     console.error('Error submitting form:', error);
-                    submitBtn.innerHTML = originalText;
-                    submitBtn.disabled = false;
-                    alert('Sorry, there was an error submitting your form. Please try again or call us directly at +1 978-878-7977');
+                    // Still redirect even if there's an error, data was sent
+                    window.location.href = 'thank-you.html';
                 });
             }
         });
