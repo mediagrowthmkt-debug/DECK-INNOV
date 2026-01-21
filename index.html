@@ -316,10 +316,17 @@
             position: relative;
             height: 250px;
             overflow: hidden;
-            cursor: ew-resize;
+            cursor: ew-resize !important;
             user-select: none;
             -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
             touch-action: none;
+        }
+
+        .before-after-slider * {
+            user-select: none;
+            -webkit-user-select: none;
         }
 
         .before-after-slider img {
@@ -329,7 +336,7 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
-            pointer-events: none;
+            pointer-events: none !important;
         }
 
         .before-image {
@@ -348,10 +355,10 @@
             width: 4px;
             height: 100%;
             background: #FFC300;
-            z-index: 3;
-            cursor: ew-resize;
+            z-index: 10;
+            cursor: ew-resize !important;
             transform: translateX(-50%);
-            pointer-events: all;
+            pointer-events: none !important;
         }
 
         .slider-handle::before {
@@ -365,7 +372,7 @@
             border-radius: 50%;
             transform: translate(-50%, -50%);
             border: 3px solid #000;
-            pointer-events: all;
+            pointer-events: none !important;
         }
 
         .slider-handle::after {
@@ -378,7 +385,7 @@
             font-weight: bold;
             font-size: 16px;
             line-height: 1;
-            pointer-events: none;
+            pointer-events: none !important;
         }
 
         .before-after-labels {
@@ -1580,59 +1587,81 @@
 
         // Before/After Slider Functionality
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('Initializing Before/After sliders...');
             const sliders = document.querySelectorAll('.before-after-slider');
+            console.log('Found sliders:', sliders.length);
             
-            sliders.forEach(slider => {
+            sliders.forEach((slider, index) => {
                 const handle = slider.querySelector('.slider-handle');
                 const afterImage = slider.querySelector('.after-image');
                 
-                if (!handle || !afterImage) return;
+                console.log(`Slider ${index + 1}:`, { handle, afterImage });
+                
+                if (!handle || !afterImage) {
+                    console.error(`Slider ${index + 1} missing elements`);
+                    return;
+                }
                 
                 let isActive = false;
                 
-                function updateSlider(x) {
+                function updateSlider(clientX) {
                     const rect = slider.getBoundingClientRect();
-                    const offsetX = Math.max(0, Math.min(x - rect.left, rect.width));
-                    const percentage = (offsetX / rect.width) * 100;
+                    const x = clientX - rect.left;
+                    const percentage = Math.max(0, Math.min(100, (x / rect.width) * 100));
                     
                     handle.style.left = percentage + '%';
                     afterImage.style.clipPath = `inset(0 ${100 - percentage}% 0 0)`;
                 }
                 
-                function onMove(e) {
-                    if (!isActive) return;
-                    
-                    const x = e.touches ? e.touches[0].clientX : e.clientX;
-                    updateSlider(x);
-                }
-                
-                // Mouse events
-                slider.addEventListener('mousedown', (e) => {
+                // Mouse down on slider
+                slider.addEventListener('mousedown', function(e) {
+                    console.log('Mouse down on slider', index + 1);
                     isActive = true;
                     updateSlider(e.clientX);
+                    e.preventDefault();
                 });
                 
-                window.addEventListener('mousemove', onMove);
-                
-                window.addEventListener('mouseup', () => {
-                    isActive = false;
+                // Mouse move anywhere
+                document.addEventListener('mousemove', function(e) {
+                    if (!isActive) return;
+                    updateSlider(e.clientX);
+                    e.preventDefault();
                 });
                 
-                // Touch events
-                slider.addEventListener('touchstart', (e) => {
+                // Mouse up anywhere
+                document.addEventListener('mouseup', function() {
+                    if (isActive) {
+                        console.log('Mouse up, stopping drag');
+                        isActive = false;
+                    }
+                });
+                
+                // Touch start on slider
+                slider.addEventListener('touchstart', function(e) {
+                    console.log('Touch start on slider', index + 1);
                     isActive = true;
                     updateSlider(e.touches[0].clientX);
-                }, { passive: true });
+                    e.preventDefault();
+                }, { passive: false });
                 
-                window.addEventListener('touchmove', onMove, { passive: true });
+                // Touch move anywhere
+                document.addEventListener('touchmove', function(e) {
+                    if (!isActive) return;
+                    updateSlider(e.touches[0].clientX);
+                    e.preventDefault();
+                }, { passive: false });
                 
-                window.addEventListener('touchend', () => {
-                    isActive = false;
+                // Touch end anywhere
+                document.addEventListener('touchend', function() {
+                    if (isActive) {
+                        console.log('Touch end, stopping drag');
+                        isActive = false;
+                    }
                 });
                 
                 // Initialize at 50%
-                handle.style.left = '50%';
-                afterImage.style.clipPath = 'inset(0 50% 0 0)';
+                updateSlider(slider.getBoundingClientRect().left + (slider.getBoundingClientRect().width / 2));
+                console.log(`Slider ${index + 1} initialized`);
             });
         });
 
