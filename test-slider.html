@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Slider</title>
+    <style>
+        body {
+            background: #000;
+            padding: 50px;
+            font-family: Arial;
+        }
+        
+        .slider-container {
+            width: 400px;
+            height: 300px;
+            position: relative;
+            overflow: hidden;
+            cursor: ew-resize;
+            border: 2px solid yellow;
+        }
+        
+        .slider-container img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            pointer-events: none;
+        }
+        
+        .img-before {
+            z-index: 1;
+        }
+        
+        .img-after {
+            z-index: 2;
+            clip-path: inset(0 50% 0 0);
+        }
+        
+        .handle {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            width: 4px;
+            height: 100%;
+            background: yellow;
+            z-index: 10;
+            transform: translateX(-50%);
+            pointer-events: none;
+        }
+        
+        .handle::before {
+            content: '⟷';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 40px;
+            height: 40px;
+            background: yellow;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+        
+        #debug {
+            color: white;
+            margin-top: 20px;
+            padding: 10px;
+            background: #333;
+        }
+    </style>
+</head>
+<body>
+    <h1 style="color: white;">Test Before/After Slider</h1>
+    
+    <div class="slider-container" id="slider1">
+        <img src="before and afters/after 3.webp" class="img-before">
+        <img src="before and afters/before 3.webp" class="img-after">
+        <div class="handle"></div>
+    </div>
+    
+    <div id="debug">Debug info will appear here</div>
+    
+    <script>
+        const debug = document.getElementById('debug');
+        const slider = document.getElementById('slider1');
+        const handle = slider.querySelector('.handle');
+        const afterImg = slider.querySelector('.img-after');
+        
+        let isDragging = false;
+        
+        function log(msg) {
+            debug.innerHTML = msg + '<br>' + debug.innerHTML;
+            console.log(msg);
+        }
+        
+        function updatePosition(clientX) {
+            const rect = slider.getBoundingClientRect();
+            const x = clientX - rect.left;
+            const pct = Math.max(0, Math.min(100, (x / rect.width) * 100));
+            
+            handle.style.left = pct + '%';
+            afterImg.style.clipPath = `inset(0 ${100 - pct}% 0 0)`;
+            
+            log(`Position: ${pct.toFixed(1)}%`);
+        }
+        
+        slider.onmousedown = function(e) {
+            isDragging = true;
+            log('MOUSE DOWN');
+            updatePosition(e.clientX);
+        };
+        
+        document.onmousemove = function(e) {
+            if (!isDragging) return;
+            log('MOUSE MOVE');
+            updatePosition(e.clientX);
+        };
+        
+        document.onmouseup = function() {
+            if (isDragging) {
+                isDragging = false;
+                log('MOUSE UP');
+            }
+        };
+        
+        // Touch
+        slider.ontouchstart = function(e) {
+            isDragging = true;
+            log('TOUCH START');
+            updatePosition(e.touches[0].clientX);
+            e.preventDefault();
+        };
+        
+        document.ontouchmove = function(e) {
+            if (!isDragging) return;
+            log('TOUCH MOVE');
+            updatePosition(e.touches[0].clientX);
+        };
+        
+        document.ontouchend = function() {
+            if (isDragging) {
+                isDragging = false;
+                log('TOUCH END');
+            }
+        };
+        
+        log('Slider initialized!');
+    </script>
+</body>
+</html>

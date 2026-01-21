@@ -311,22 +311,11 @@
             transform: translateY(-10px);
         }
 
-        /* BEFORE AFTER SLIDER */
+        /* BEFORE AFTER SLIDER - USANDO INPUT RANGE NATIVO */
         .before-after-slider {
             position: relative;
             height: 250px;
             overflow: hidden;
-            cursor: ew-resize !important;
-            user-select: none;
-            -webkit-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
-            touch-action: none;
-        }
-
-        .before-after-slider * {
-            user-select: none;
-            -webkit-user-select: none;
         }
 
         .before-after-slider img {
@@ -336,7 +325,7 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
-            pointer-events: none !important;
+            pointer-events: none;
         }
 
         .before-image {
@@ -348,6 +337,41 @@
             clip-path: inset(0 50% 0 0);
         }
 
+        /* SLIDER RANGE INPUT - INVISÍVEL MAS FUNCIONAL */
+        .slider-range {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            opacity: 0;
+            cursor: ew-resize;
+            -webkit-appearance: none;
+            appearance: none;
+            background: transparent;
+            margin: 0;
+            padding: 0;
+        }
+
+        .slider-range::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 50px;
+            height: 100%;
+            cursor: ew-resize;
+            background: transparent;
+        }
+
+        .slider-range::-moz-range-thumb {
+            width: 50px;
+            height: 100%;
+            cursor: ew-resize;
+            background: transparent;
+            border: none;
+        }
+
+        /* HANDLE VISUAL */
         .slider-handle {
             position: absolute;
             top: 0;
@@ -355,10 +379,9 @@
             width: 4px;
             height: 100%;
             background: #FFC300;
-            z-index: 10;
-            cursor: ew-resize !important;
+            z-index: 5;
             transform: translateX(-50%);
-            pointer-events: none !important;
+            pointer-events: none;
         }
 
         .slider-handle::before {
@@ -372,7 +395,6 @@
             border-radius: 50%;
             transform: translate(-50%, -50%);
             border: 3px solid #000;
-            pointer-events: none !important;
         }
 
         .slider-handle::after {
@@ -385,7 +407,6 @@
             font-weight: bold;
             font-size: 16px;
             line-height: 1;
-            pointer-events: none !important;
         }
 
         .before-after-labels {
@@ -1143,6 +1164,7 @@
                 <div class="before-after-slider" data-project="project-1">
                     <img src="before and afters/after 3.webp" alt="After" class="before-image" loading="lazy" decoding="async">
                     <img src="before and afters/before 3.webp" alt="Before" class="after-image" loading="lazy" decoding="async">
+                    <input type="range" min="0" max="100" value="50" class="slider-range">
                     <div class="slider-handle"></div>
                     <div class="before-after-labels">
                         <span class="before-label">BEFORE</span>
@@ -1158,6 +1180,7 @@
                 <div class="before-after-slider" data-project="project-2">
                     <img src="before and afters/after 2.webp" alt="After" class="before-image" loading="lazy" decoding="async">
                     <img src="before and afters/before 2.webp" alt="Before" class="after-image" loading="lazy" decoding="async">
+                    <input type="range" min="0" max="100" value="50" class="slider-range">
                     <div class="slider-handle"></div>
                     <div class="before-after-labels">
                         <span class="before-label">BEFORE</span>
@@ -1173,6 +1196,7 @@
                 <div class="before-after-slider" data-project="project-3">
                     <img src="before and afters/AFTER. 1.webp" alt="After" class="before-image" loading="lazy" decoding="async">
                     <img src="before and afters/BEFORE 1.webp" alt="Before" class="after-image" loading="lazy" decoding="async">
+                    <input type="range" min="0" max="100" value="50" class="slider-range">
                     <div class="slider-handle"></div>
                     <div class="before-after-labels">
                         <span class="before-label">BEFORE</span>
@@ -1585,84 +1609,19 @@
 
         initHeroSlider();
 
-        // Before/After Slider Functionality
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('Initializing Before/After sliders...');
-            const sliders = document.querySelectorAll('.before-after-slider');
-            console.log('Found sliders:', sliders.length);
+        // Before/After Slider - USANDO INPUT RANGE NATIVO (100% funcional)
+        document.querySelectorAll('.before-after-slider').forEach(function(slider) {
+            var range = slider.querySelector('.slider-range');
+            var handle = slider.querySelector('.slider-handle');
+            var afterImage = slider.querySelector('.after-image');
             
-            sliders.forEach((slider, index) => {
-                const handle = slider.querySelector('.slider-handle');
-                const afterImage = slider.querySelector('.after-image');
-                
-                console.log(`Slider ${index + 1}:`, { handle, afterImage });
-                
-                if (!handle || !afterImage) {
-                    console.error(`Slider ${index + 1} missing elements`);
-                    return;
-                }
-                
-                let isActive = false;
-                
-                function updateSlider(clientX) {
-                    const rect = slider.getBoundingClientRect();
-                    const x = clientX - rect.left;
-                    const percentage = Math.max(0, Math.min(100, (x / rect.width) * 100));
-                    
-                    handle.style.left = percentage + '%';
-                    afterImage.style.clipPath = `inset(0 ${100 - percentage}% 0 0)`;
-                }
-                
-                // Mouse down on slider
-                slider.addEventListener('mousedown', function(e) {
-                    console.log('Mouse down on slider', index + 1);
-                    isActive = true;
-                    updateSlider(e.clientX);
-                    e.preventDefault();
+            if (range && handle && afterImage) {
+                range.addEventListener('input', function() {
+                    var value = this.value;
+                    handle.style.left = value + '%';
+                    afterImage.style.clipPath = 'inset(0 ' + (100 - value) + '% 0 0)';
                 });
-                
-                // Mouse move anywhere
-                document.addEventListener('mousemove', function(e) {
-                    if (!isActive) return;
-                    updateSlider(e.clientX);
-                    e.preventDefault();
-                });
-                
-                // Mouse up anywhere
-                document.addEventListener('mouseup', function() {
-                    if (isActive) {
-                        console.log('Mouse up, stopping drag');
-                        isActive = false;
-                    }
-                });
-                
-                // Touch start on slider
-                slider.addEventListener('touchstart', function(e) {
-                    console.log('Touch start on slider', index + 1);
-                    isActive = true;
-                    updateSlider(e.touches[0].clientX);
-                    e.preventDefault();
-                }, { passive: false });
-                
-                // Touch move anywhere
-                document.addEventListener('touchmove', function(e) {
-                    if (!isActive) return;
-                    updateSlider(e.touches[0].clientX);
-                    e.preventDefault();
-                }, { passive: false });
-                
-                // Touch end anywhere
-                document.addEventListener('touchend', function() {
-                    if (isActive) {
-                        console.log('Touch end, stopping drag');
-                        isActive = false;
-                    }
-                });
-                
-                // Initialize at 50%
-                updateSlider(slider.getBoundingClientRect().left + (slider.getBoundingClientRect().width / 2));
-                console.log(`Slider ${index + 1} initialized`);
-            });
+            }
         });
 
         // Contact Form Handling
